@@ -12,47 +12,54 @@ let Sal = ("Sal", (11111111, 2));;
 let Sam = ("Sam", (12121212, 7));;
 let Jane = ("Jane", (13131313, 1));;
 
-let register = [Joe; Sal; Sam; Jane];;
+let register:register = [Joe; Sal; Sam; Jane];;
 
 // Point 2
-let rec getPhone name = function
+let rec getPhone (name:name) (register:register) =
+  match register with
   | [] -> failwith "User was not found"
   | (a,(b,c)) :: tail when a = name -> b
   | _ :: tail -> getPhone name tail;;
 
 // Point 3
-let rec delete (name, reg) =
-  match reg with
-    | [] -> failwith "User was not found"
-    | (a,_) :: tail when a = name -> tail
-    | head :: tail -> head :: delete (name, tail);;
+let rec delete (name:name, register:register) =
+  match register with
+  | [] -> failwith "User was not found"
+  | (a,_) :: tail when a = name -> tail
+  | head :: tail -> head :: delete (name, tail);;
 
 // Point 4
-let rec getCandidates level = function
+let rec getCandidates (level:level) (register:register) =
+  match register with
   | [] -> []
   | (a,(b,c)) :: tail when abs (c - level) < 3 -> (a,b) :: getCandidates level tail
   | _ :: tail -> getCandidates level tail;;
 
 // Problem 2 30%
-// Point 1
 type exp =
   | C of int
   | BinOp of exp * string * exp;;
 
+// Point 1
 let exp1 = C 1;;
 let exp2 = C 2;;
 let exp3 = BinOp (exp1, "+", exp2);;
 let exp4 = BinOp (exp2, "*", exp3);;
 
 // Point 2
-let rec toString = function
+let rec toString (exp:exp) =
+  match exp with
   | C x -> string x
   | BinOp (a,b,c) -> "(" + toString a + b + toString c + ")";;
 
 // Point 3
-let rec extract = function
-  | C _ -> []
-  | BinOp (a,b,c) -> b :: extract a @ extract c;;
+let rec extract (exp:exp) =
+  let rec aux (acc:string list) (exp:exp) =
+    match exp with
+    | C _ -> acc
+    | BinOp (a,b,c) -> aux (b :: acc @ (aux acc c)) a
+  
+  Set.ofList (aux [] exp);;
 
 // Point 4
 type expr =
@@ -61,25 +68,28 @@ type expr =
   | Id of string
   | Def of string * expr * expr;;
 
-//
-//
-//
-//
-//
-//
-
+let rec isDef (expr:expr)  =
+  let rec aux (id:string) (expr:expr) =
+    match expr with
+    | C _ -> true
+    | BinOp (x, _, y) -> aux id x && aux id y
+    | Id x when x = id -> true
+    | Def (x, _, BinOp (y, _, z)) -> aux x y && aux x z
+    | _ -> false
+  
+  aux "" expr;;
 
 // Problem 3 20%
 type 'a tree =
   | Lf
   | Br of 'a * 'a tree * 'a tree;;
 
-let rec f(n,t) =
+let rec f (n,t) =
   match t with
     | Lf -> Lf
     | Br (a,t1,t2) -> if n > 0
-                        then Br (a, f(n - 1, t1), f(n - 1, t2))
-                        else Lf;;
+                                              then Br (a, f(n - 1, t1), f(n - 1, t2))
+                                              else Lf;;
 
 let rec g p = function
   | Br (a,t1,t2) when p = a -> Br (a, g p t1, g p t2)
