@@ -195,7 +195,7 @@ let rec sumTree = function
 
 let rec toList = function
   | Lf -> []
-  | Br (x, t1, t2) -> x :: (ToList t1 @ toList t2);;
+  | Br (x, t1, t2) -> x :: (toList t1 @ toList t2);;
 
 let rec sumList = function
   | [] -> 0
