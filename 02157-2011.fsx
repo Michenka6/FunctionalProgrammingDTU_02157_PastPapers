@@ -1,103 +1,94 @@
-type name = string;;
-type phone = int;;
-type level = int;;
+type name = string
+type phone = int
+type level = int
 
-type description = phone * level;;
-type register = (name * description) list;;
+type description = phone * level
+type register = (name * description) list
 
 // Problem 1 30%
 // Point 1
-let Joe = ("Joe", (10101010, 4));;
-let Sal = ("Sal", (11111111, 2));;
-let Sam = ("Sam", (12121212, 7));;
-let Jane = ("Jane", (13131313, 1));;
+let Joe = ("Joe", (10101010, 4))
+let Sal = ("Sal", (11111111, 2))
+let Sam = ("Sam", (12121212, 7))
+let Jane = ("Jane", (13131313, 1))
 
-let register:register = [Joe; Sal; Sam; Jane];;
+let register: register = [ Joe; Sal; Sam; Jane ]
 
 // Point 2
-let rec getPhone (name:name) (register:register) =
-  match register with
-  | [] -> failwith "User was not found"
-  | (a,(b,c)) :: tail when a = name -> b
-  | _ :: tail -> getPhone name tail;;
+let getPhone (name: name) (register: register) =
+    register |> List.filter (fun (x, _) -> x = name) |> List.head |> fst
 
 // Point 3
-let rec delete (name:name, register:register) =
-  match register with
-  | [] -> failwith "User was not found"
-  | (a,_) :: tail when a = name -> tail
-  | head :: tail -> head :: delete (name, tail);;
+let delete (name: name, register: register) =
+    register |> List.filter (fun (x, _) -> x <> name)
 
-// Point 4
-let rec getCandidates (level:level) (register:register) =
-  match register with
-  | [] -> []
-  | (a,(b,c)) :: tail when abs (c - level) < 3 -> (a,b) :: getCandidates level tail
-  | _ :: tail -> getCandidates level tail;;
+// Point 4s
+let getCandidates (level: level) (registers: register) =
+    register
+    |> List.filter (fun (_, (_, c)) -> abs (c - level) < 3)
+    |> List.map (fun (a, (b, _)) -> (a, b))
 
 // Problem 2 30%
 type exp =
-  | C of int
-  | BinOp of exp * string * exp;;
+    | C of int
+    | BinOp of exp * string * exp
 
 // Point 1
-let exp1 = C 1;;
-let exp2 = C 2;;
-let exp3 = BinOp (exp1, "+", exp2);;
-let exp4 = BinOp (exp2, "*", exp3);;
+let exp1 = C 1
+let exp2 = C 2
+let exp3 = BinOp(exp1, "+", exp2)
+let exp4 = BinOp(exp2, "*", exp3)
 
 // Point 2
-let rec toString (exp:exp) =
-  match exp with
-  | C x -> string x
-  | BinOp (a,b,c) -> "(" + toString a + b + toString c + ")";;
+let rec toString (exp: exp) =
+    match exp with
+    | C x -> string x
+    | BinOp (a, b, c) -> "(" + toString a + b + toString c + ")"
 
 // Point 3
-let rec extract (exp:exp) =
-  let rec aux (acc:string list) (exp:exp) =
+let rec extract' (exp: exp) =
     match exp with
-    | C _ -> acc
-    | BinOp (a,b,c) -> aux (b :: acc @ (aux acc c)) a
-  
-  Set.ofList (aux [] exp);;
+    | C _ -> []
+    | BinOp (a, b, c) -> b :: extract' a @ extract' c
+
+let extract (exp: exp) = extract' exp |> Set.ofList
 
 // Point 4
 type expr =
-  | C of int
-  | BinOp of expr * string * expr
-  | Id of string
-  | Def of string * expr * expr;;
+    | C of int
+    | BinOp of expr * string * expr
+    | Id of string
+    | Def of string * expr * expr
 
-let rec isDef (expr:expr)  =
-  let rec aux (id:string) (expr:expr) =
-    match expr with
-    | C _ -> true
-    | BinOp (x, _, y) -> aux id x && aux id y
-    | Id x when x = id -> true
-    | Def (x, _, BinOp (y, _, z)) -> aux x y && aux x z
-    | _ -> false
-  
-  aux "" expr;;
+let rec isDef (expr: expr) =
+    let rec aux (id: string) (expr: expr) =
+        match expr with
+        | C _ -> true
+        | BinOp (x, _, y) -> aux id x && aux id y
+        | Id x -> x = id
+        | Def (x, y, z) -> aux x y && aux x z
+
+    aux "" expr
 
 // Problem 3 20%
 type 'a tree =
-  | Lf
-  | Br of 'a * 'a tree * 'a tree;;
+    | Lf
+    | Br of 'a * 'a tree * 'a tree
 
-let rec f (n,t) =
-  match t with
+let rec f (n, t) =
+    match t with
     | Lf -> Lf
-    | Br (a,t1,t2) -> if n > 0
-                                              then Br (a, f(n - 1, t1), f(n - 1, t2))
-                                              else Lf;;
+    | Br (a, t1, t2) -> if n > 0 then Br(a, f (n - 1, t1), f (n - 1, t2)) else Lf
 
-let rec g p = function
-  | Br (a,t1,t2) when p = a -> Br (a, g p t1, g p t2)
-  | _ -> Lf;;
+let rec g p =
+    function
+    | Br (a, t1, t2) when p = a -> Br(a, g p t1, g p t2)
+    | _ -> Lf
 
-let rec h k = function
-  | Lf -> Lf
-  | Br (a,t1,t2) -> Br (k a, h k t1, h k t2);;
+let rec h k =
+    function
+    | Lf -> Lf
+    | Br (a, t1, t2) -> Br(k a, h k t1, h k t2)
 
 // Point 1
 (*
@@ -117,13 +108,15 @@ let rec h k = function
 *)
 
 // Problem 4 20%
-let rec map f = function
-  | [] -> []
-  | x :: xs -> f x :: map f xs;;
+let rec map f =
+    function
+    | [] -> []
+    | x :: xs -> f x :: map f xs
 
-let rec rev = function
-  | [] -> []
-  | x :: xs -> rev xs @ [x];;
+let rec rev =
+    function
+    | [] -> []
+    | x :: xs -> rev xs @ [ x ]
 
 (*
   Function map maps f onto all elements of the list, but does not change the order of elements in the list
