@@ -8,22 +8,17 @@ let ad3: Usage = ("dishwasher", 2)
 let ats: Usage list = [ ad1; ad2; ad3; ad1; ad2 ]
 
 // Point 1
-let And = List.fold (&&) true
-
-let inv (ls: Usage list) =
-    ls |> List.map (fun (_, x) -> x > 0) |> And
+let inv (ls: Usage list) = List.forall (snd >> (>) 0) ls
 
 // Point 2
 let durationOf (a: Appliance) (ls: Usage list) =
-    ls |> List.filter (fun (x, _) -> x = a) |> List.map snd |> List.sum
+    List.sumBy (fun (x, y) -> if x = a then y else 0) ls
 
 // Point 3
-let wellFormed (ls: Usage list) =
-    inv ls && ls |> List.map snd |> List.sum <= 24
+let wellFormed (ls: Usage list) = inv ls && List.sumBy snd ls <= 24
 
 // Point 4
-let delete (a: Appliance) (ls: Usage list) =
-    ls |> List.filter (fun (x, _) -> x <> a)
+let delete (a: Appliance) (ls: Usage list) = List.filter (fst >> (<>) a) ls
 
 type Price = int
 type Tariff = Map<Appliance, Price>
@@ -36,11 +31,11 @@ let trf =
 
 // Point 5
 let isDefined (ats: Usage list) (trf: Tariff) =
-    ats |> List.map (fun (x, _) -> trf |> Map.tryFind x <> None) |> And
+    ats |> List.forall (fun (x, _) -> Map.containsKey x trf)
 
 // Point 6
 let priceOf (ats: Usage list) (trf: Tariff) =
-    ats |> List.map (fun (x, y) -> (trf |> Map.find x) * y) |> List.sum
+    List.sumBy (fun (x, y) -> y * Map.find x trf) ats
 
 // Problem 2 (35%)
 let rec g1 p =
@@ -82,31 +77,21 @@ let riv2 = R("R2", 15, [ riv4 ])
 let riv = R("R", 10, [ riv1; riv2; riv3 ])
 
 // Point 2
-let Or = List.fold (||) false
-
-let rec contains n (R (x, y, xs): River) =
-    x = n || xs |> List.map (contains n) |> Or
+let rec contains n (R (x, _, xs): River) = x = n || List.exists (contains n) xs
 
 // Point 3
-let rec allNames (R (x, y, xs): River) =
-    [ x ] @ (xs |> List.map allNames |> List.concat)
+let rec allNames (R (x, _, xs): River) = [ x ] @ List.collect allNames xs
 
 // Point 4
-let rec totalFlow (R (x, y, xs): River) =
-    y + (xs |> List.map totalFlow |> List.sum)
+let rec totalFlow (R (x, y, xs): River) = y + List.sumBy totalFlow xs
 
 // Point 5
-let rec mainSource (riv: River) =
-    let rec aux (R (x, y, xs): River) =
-        [ (x, y) ] @ (xs |> List.map aux |> List.concat)
-
-    aux riv |> List.sortBy snd |> List.last
+let rec mainSource (R (x, y, xs): River) =
+    ((x, y) :: List.map mainSource xs) |> List.maxBy snd
 
 // Point 6
 let rec tryInsert n (t: River) (R (x, y, tr): River) =
     match tr with
-    | ls when x = n -> Some(R(x, y, t :: ls))
-    | head :: tail ->
-        let d = (tryInsert n t head)
-        if d = None then tryInsert n t (R(x, y, tail)) else d
-    | _ -> None
+    | _ when n = x -> Some(R(x, y, t :: tr))
+    | [] -> None
+    | _ -> tr |> List.map (tryInsert n t) |> List.fold Option.orElse None

@@ -10,26 +10,24 @@ let res3: Result = ("Rory", 5)
 let results: Result list = [ res1; res2; res3 ]
 
 let legalResults (results: Result list) =
-    results |> List.forall (fun (_, x) -> x <= 100 && x >= 0)
+    List.forall (fun (_, x) -> x <= 100 && x >= 0) results
 
 // Point 2
-let maxScore' (resutls: Result list) = results |> List.maxBy snd |> fst
+let maxScore (resutls: Result list) = results |> List.maxBy snd |> fst
 
 // Point 3
-let best (results: Result list) = results |> List.maxBy snd
+let best (results: Result list) = List.maxBy snd results
 
 // Point 4
 let average (results: Result list) =
-    let len = results |> List.length |> float
-    results |> List.fold (fun x (_, y) -> x + (float y / len)) 0.0
+    float (List.sumBy snd results) / float (List.length results)
 
 // Point 5
-let delete (res: Result) (results: Result list) =
-    results |> List.filter (fun x -> x <> res)
+let delete (res: Result) (results: Result list) = List.filter ((<>) res) results
 
 // Point 6
 let bestN (results: Result list) n =
-    results |> List.sortBy (fun (_, y) -> y) |> List.rev |> List.take n
+    results |> List.sortByDescending snd |> List.take n
 
 // Problem 2 (35%)
 type Typ =
@@ -43,16 +41,15 @@ type Decl = string * Typ
 let decs: Decl list = [ ("2", Integer); ("True", Boolean); ("1", Integer) ]
 
 let distinctVars (declarations: Decl list) =
-    declarations |> Set.ofList |> Set.count |> (=) (declarations |> List.length)
+    declarations = List.distinct declarations
 
 type SymbolTable = Map<string, Typ>
 
 // Point 2
-let toSymbolTable (declarations: Decl list) = declarations |> Map.ofList
+let toSymbolTable (declarations: Decl list) = Map.ofList declarations
 // Point 3
 let extendST (sym: SymbolTable) (declarations: Decl list) =
-    let sym1 = toSymbolTable declarations
-    Map.fold (fun acc a b -> acc |> Map.add a b) sym sym1
+    Map.fold (fun acc a b -> Map.add a b acc) sym (toSymbolTable declarations)
 
 type Exp =
     | V of string
@@ -66,14 +63,14 @@ let madd: SymbolTable =
 // Point 4
 let rec symbolsDefined (sym: SymbolTable) (exp: Exp) =
     match exp with
-    | V x -> sym |> Map.containsKey x
-    | A (x, xs) -> sym |> Map.containsKey x && xs |> List.forall (symbolsDefined sym)
+    | V x -> Map.containsKey x sym
+    | A (x, xs) -> Map.containsKey x sym && List.forall (symbolsDefined sym) xs
 
 // Point 5
 let rec typOf (sym: SymbolTable) (exp: Exp) =
     match exp with
-    | V x -> (sym |> Map.tryFind x).Value
-    | A (x, xs) -> (sym |> Map.tryFind x).Value
+    | V x -> Map.find x sym
+    | A (x, xs) -> Map.find x sym
 
 type Stm =
     | Ass of string * Exp
@@ -85,7 +82,7 @@ type Stm =
 // Point 6
 let rec wellTyped (sym: SymbolTable) (stm: Stm) =
     match stm with
-    | Ass (x, e) -> sym |> Map.containsKey x && sym |> Map.find x = typOf sym e
+    | Ass (x, e) -> Map.containsKey x sym && Map.find x sym = typOf sym e
     | Seq (stm1, stm2) -> wellTyped sym stm1 && wellTyped sym stm2
     | Ite (e, stm1, stm2) -> typOf sym e = Boolean && wellTyped sym stm1 && wellTyped sym stm2
     | While (e, stm) -> typOf sym e = Boolean && wellTyped sym stm
@@ -157,7 +154,7 @@ let rec sumTree =
 let rec toList =
     function
     | Lf -> []
-    | Br (x, t1, t2) -> x :: (toList t1 @ toList t2)
+    | Br (x, t1, t2) -> x :: toList t1 @ toList t2
 
 let rec sumList =
     function

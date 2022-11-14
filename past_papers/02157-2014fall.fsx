@@ -5,23 +5,18 @@ let rel: Rel<int, string> = [ (1, [ "a"; "b"; "c" ]); (4, [ "b"; "e" ]) ]
 
 // Point 1
 let apply a (rel: Rel<'a, 'b>) =
-    match rel |> List.filter (fun (x, _) -> x = a) with
-    | [] -> []
-    | (a, b) :: xs -> b
+    List.collect (fun (x, y) -> if x = a then [ y ] else []) rel
 
 // Point 2
-let inRelation x y (rel: Rel<'a, 'b>) = rel |> apply x |> List.contains y
+let inRelation x y (rel: Rel<'a, 'b>) = (x, rel) ||> apply |> List.contains y
 
 // Point 3
 let insert x y (rel: Rel<'a, 'b>) =
-    if rel |> List.map fst |> List.contains x then
-        rel |> List.map (fun (a, b) -> if x = a then (a, y :: b) else (a, b))
-    else
-        ((x, [ y ]) :: rel)
+    List.map (fun (a, b) -> if a = x then (a, y :: b) else (a, b)) rel
 
 // Point 4
 let toRel (ls: ('a * 'b) list) : Rel<'a, 'b> =
-    List.fold (fun acc (x, y) -> insert x y acc) [] ls
+    ([], ls) ||> List.fold (fun acc (x, y) -> insert x y acc)
 
 // Problem 2 (25%)
 // Point 1
@@ -136,9 +131,9 @@ let ds: Description = ([ (F, ">2"); (S, ">3") ], 0.165, "C")
 
 let rec descriptionOf (os: Sample) (t: ProbTree) =
     let rec aux (os: Sample) (t: ProbTree) ((ls, n, str): Description) =
-        match (os, t) with
-        | ([], Leaf x) -> (ls |> List.rev, n, x)
-        | (x :: xs, Branch (s, p, tl, tr)) ->
+        match os, t with
+        | [], Leaf x -> (List.rev ls, n, x)
+        | x :: xs, Branch (s, p, tl, tr) ->
             match x with
             | S -> aux xs tl (((S, s) :: ls), p * n, str)
             | F -> aux xs tr (((F, s) :: ls), (1.0 - p) * n, str)
@@ -160,8 +155,8 @@ let allDescriptions (t: ProbTree) : Set<Description> =
 // Point 5
 let probabilityOf (t: ProbTree) pred =
     allDescriptions t
-    |> Set.map (fun (_, p, c) -> if pred c then p else 0.0)
-    |> Set.fold (+) 0.0
+    |> Set.toList
+    |> List.sumBy (fun (_, p, c) -> if pred c then p else 0.0)
 
 // Point 6
 // TRIVIAL

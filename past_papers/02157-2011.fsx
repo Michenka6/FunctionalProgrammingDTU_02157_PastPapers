@@ -1,3 +1,4 @@
+// Problem 1 30%
 type name = string
 type phone = int
 type level = int
@@ -5,7 +6,6 @@ type level = int
 type description = phone * level
 type register = (name * description) list
 
-// Problem 1 30%
 // Point 1
 let Joe = ("Joe", (10101010, 4))
 let Sal = ("Sal", (11111111, 2))
@@ -16,18 +16,14 @@ let register: register = [ Joe; Sal; Sam; Jane ]
 
 // Point 2
 let getPhone (name: name) (register: register) =
-    register |> List.filter (fun (x, _) -> x = name) |> List.head |> fst
+    List.sumBy (fun (n, (x, _)) -> if n = name then x else 0) register
 
 // Point 3
-let delete (name: name, register: register) =
-    register |> List.filter (fun (x, _) -> x <> name)
+let delete (name: name, register: register) = List.filter (fst >> (<>) name) register
 
 // Point 4s
 let getCandidates (level: level) (registers: register) =
-    register
-    |> List.filter (fun (_, (_, c)) -> abs (c - level) < 3)
-    |> List.map (fun (a, (b, _)) -> (a, b))
-
+    List.collect (fun (a, (b, c)) -> if abs (c - level) < 3 then [ (a, b) ] else []) register
 // Problem 2 30%
 type exp =
     | C of int

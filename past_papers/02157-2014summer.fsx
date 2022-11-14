@@ -84,17 +84,14 @@ let rec ordered ls =
     | [ _ ] -> true
     | x :: (y :: tail) -> (x <= y) && ordered (y :: tail)
 
+let ordered' ls = ls = List.sort ls
+
 // Point 2
-let smallerThanAll x xs = xs |> List.forall (fun a -> x < a)
+let smallerThanAll x = List.forall (x (<))
 
 // Point 3
-let insertBefore (p: ('a -> bool)) x xs =
-    let bools = xs |> List.map p
-
-    let (a, b) =
-        (bools |> List.filter (fun x -> x = false), bools |> List.filter (fun x -> x = true))
-
-    a @ [ x ] @ b
+let insertBefore p x xs =
+    List.takeWhile (p >> not) xs @ [ x ] @ List.skipWhile (p >> not) xs
 
 // Point 4
 type Sex =
@@ -107,8 +104,7 @@ let rec sexToString (sex: Sex) =
     | F -> "Female"
 
 // Point 5
-let replicate n str =
-    [ 1..n ] |> List.fold (fun s _ -> s + str) ""
+let replicate = String.replicate
 
 // Problem 3 (40%)
 type Name = string
@@ -134,58 +130,51 @@ let paul = P("Paul", M, 1955, [])
 let larry = P("Larry", M, 1920, [ may; joe; paul ])
 
 // Point 1
-let rec isWF (t: FamilyTree) =
-    match t with
-    | P (_, _, _, []) -> true
-    | P (a, b, x, xs) ->
-        let ages = xs |> List.map (fun (P (_, _, y, _)) -> y)
+let getAge (P (_, _, x, _)) = x
 
-        x < (ages |> List.max)
-        && ordered ages
-        && xs |> List.map isWF |> List.fold (&&) true
+let rec isWF (P (name, sex, year, children): FamilyTree) =
+    match xs with
+    | [] -> true
+    | _ ->
+        year < (children |> List.minBy getAge |> getAge)
+        && children = List.sortBy getAge children
 
 // Point 2
 let makePerson (name, sex, year) = P(name, sex, year, [])
 
 // Point 3
-let rec insertChildOf n (P (cn, cs, cy, cc): FamilyTree) (P (name, sex, year, children): FamilyTree) =
+let rec insertChildOf n (t: FamilyTree) (P (name, sex, year, children): FamilyTree) =
     match children with
-    | _ when name = n && year < cy -> Some(P(name, sex, year, insertChildOfInList n (P(cn, cs, cy, cc)) children))
-    | head :: tail ->
-        let present = insertChildOf n (P(cn, cs, cy, cc)) head
+    | _ when name = n && year < getAge t -> Some(P(name, sex, year, insertChildOfInList n t children))
+    | [] -> None
+    | _ -> children |> List.map (insertChildOf n t) |> List.fold Option.orElse None
 
-        if present = None then
-            insertChildOf n (P(cn, cs, cy, cc)) (P(name, sex, year, tail))
-        else
-            present
-    | _ -> None
-
-and insertChildOfInList n (P (cn, cs, cy, cc): FamilyTree) (children: FamilyTree list) =
-    match children with
-    | [] -> [ (P(cn, cs, cy, cc): FamilyTree) ]
-    | P (x, y, z, c) :: tail when z <= cy -> P(x, y, z, c) :: ((P(cn, cs, cy, cc)) :: tail)
-    | head :: tail -> head :: insertChildOfInList n (P(cn, cs, cy, cc)) tail
+and insertChildOfInList n (t: FamilyTree) (children: FamilyTree list) =
+    let a, b = List.partition (fun x -> getAge x <= getAge t) children in a @ [ t ] @ b
 
 // Point 4
+let getName (P (x, _, _, _)) = x
+
 let rec find n (P (name, sex, year, children): FamilyTree) =
     match children with
-    | _ when name = n -> [ (sex, year, children |> List.map (fun (P (x, _, _, _)) -> x)) ]
-    | [] -> []
-    | children -> children |> List.map (find n) |> List.concat
+    | _ when name = n -> [ (sex, year, List.map getName children) ]
+    | children -> children |> List.collect (find n)
 
 // Point 5
-let rec toString n (P (name, sex, year, children): FamilyTree) =
-    replicate (n - 6) " "
+let rec toString' n m (P (name, sex, year, children): FamilyTree) =
+    replicate (n * m) " "
     + name
     + " "
     + sexToString sex
     + " "
     + string year
     + "\n"
-    + (children |> List.map (toString (n + 6)) |> List.fold (+) "")
+    + (children |> List.map (toString' n (m + 1)) |> List.fold (+) "")
+
+let toString n = toString' n 0
 
 // Point 6
 let rec truncate (P (name, sex, year, children): FamilyTree) =
     match children with
     | _ when sex = F -> P(name, sex, year, [])
-    | children -> P(name, sex, year, children |> List.map truncate)
+    | children -> P(name, sex, year, List.map truncate children)

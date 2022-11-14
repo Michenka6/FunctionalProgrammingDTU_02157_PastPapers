@@ -7,7 +7,7 @@ let example: Multiset<string> = [ ("b", 3); ("a", 5); ("d", 1) ]
 let rec inv (ms: Multiset<'a>) =
     match ms with
     | [] -> true
-    | head :: tail -> tail |> List.forall (fun (x, _) -> x <> fst head) && inv tail
+    | (a, _) :: tail -> List.forall (fun (x, _) -> x <> a) tail && inv tail
 
 // Point 2
 let rec insert a n (ms: Multiset<'a>) =
@@ -18,12 +18,12 @@ let rec insert a n (ms: Multiset<'a>) =
 
 // Point 3
 // 'a -> Multiset<'a> -> int when 'a equality
-let numberOf' e (ms: Multiset<'a>) =
-    ms |> List.filter (fun (x, _) -> x = e) |> List.head |> snd
+let numberOf e (ms: Multiset<'a>) =
+    List.sumBy (fun (x, y) -> if x = e then y else 0) ms
 
 // Point 4
 let delete' e (ms: Multiset<'a>) =
-    ms |> List.map (fun (x, n) -> if x = e then (x, n - 1) else (x, n))
+    List.map (fun (x, n) -> if x = e then (x, n - 1) else (x, n)) ms
 
 // Point 5
 let rec union ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
@@ -32,7 +32,7 @@ let rec union ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
     | (x, y) :: tail -> union ((insert x y ms1), tail)
 
 let union' ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
-    ms2 |> List.fold (fun ms (x, y) -> insert x y ms) ms1
+    (ms1, ms2) ||> List.fold (fun ms (x, y) -> insert x y ms)
 
 type MultisetMap<'a when 'a: comparison> = Map<'a, int>
 
@@ -40,15 +40,15 @@ let exampleMap: MultisetMap<string> =
     Map.empty |> Map.add "b" 3 |> Map.add "a" 5 |> Map.add "d" 1
 
 // Point 6
-let inv' (msm: MultisetMap<string>) = msm |> Map.forall (fun x y -> y > 0)
+let inv' (msm: MultisetMap<string>) = Map.forall (fun _ y -> y > 0) msm
 
 let insert'' a n (msm: MultisetMap<string>) =
-    match (msm |> Map.tryFind a) with
-    | Some x -> (msm |> Map.add a (x + n))
-    | None -> (msm |> Map.add a n)
+    match Map.tryFind a msm with
+    | Some x -> Map.add a (x + n) msm
+    | None -> Map.add a n msm
 
 let union'' (msm1: MultisetMap<string>) (msm2: MultisetMap<string>) =
-    msm2 |> Map.fold (fun msm a b -> msm |> Map.add a b) msm1
+    Map.fold (fun msm a b -> Map.add a b msm) msm1 msm2
 
 // Problem 2 (30%)
 let rec f i =
@@ -163,21 +163,21 @@ let book1 = [ ch1; ch2; ch3; ch4 ]
 let rec maxL = List.max
 
 // Point 2
-let overview' (book: Book) = book |> List.map fst
+let overview (book: Book) = List.map fst book
 
 // Point 3
-let rec depthSection' ((x, xs): Section) = xs |> List.map depthElem' |> List.max
+let rec depthSection ((x, xs): Section) = xs |> List.map depthElem |> List.max
 
-and depthElem' (elem: Elem) =
+and depthElem (elem: Elem) =
     match elem with
     | Par _ -> 0
-    | Sub x -> depthSection' x
+    | Sub x -> depthSection x
 
-let depthChapter' ((x, xs): Chapter) =
-    xs |> List.map (fun x -> 1 + depthSection' x) |> List.max
+let depthChapter ((x, xs): Chapter) =
+    xs |> List.map (depthSection >> (+) 1) |> List.max
 
-let depthBook' (book: Book) =
-    book |> List.map (fun x -> depthChapter' x) |> List.max
+let depthBook (book: Book) =
+    book |> List.map depthChapter |> List.max
 
 type Numbering = int list
 type Entry = Numbering * Title

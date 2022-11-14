@@ -3,28 +3,25 @@ type Prize = string
 type Achievement = int
 type PrizeTable = (Prize * Achievement) list
 
-let pt = [ ("p1", 3); ("p2", 5); ("p3", 8); ("p4", 11) ]
+let pt: PrizeTable = [ ("p1", 3); ("p2", 5); ("p3", 8); ("p4", 11) ]
 
 // Point 1
 let rec inv (pt: PrizeTable) =
     match pt with
-    | [] -> true
-    | [ x ] -> true
-    | (_, x) :: ((p, y) :: tail) -> (x < y) && inv ((p, y) :: tail)
+    | (_, a1) :: ((p, a2) :: tail) -> (a1 < a2) && inv ((p, a2) :: tail)
+    | _ -> true
 
 // Point 2
 let rec prizesFor (a: Achievement) (pt: PrizeTable) =
     match pt with
-    | [] -> []
-    | (x, y) :: tail when y < a -> x :: prizesFor a tail
-    | _ :: tail -> []
+    | (p1, a1) :: tail when a1 <= a -> p1 :: prizesFor a tail
+    | _ -> []
 
 // Point 3
 let rec increase k (pt: PrizeTable) =
     match pt with
     | [] -> []
-    | [ (x, y) ] -> [ (x, y + k) ]
-    | (x, y) :: tail -> (x, y + k) :: increase k tail
+    | (p, a) :: tail -> (p, a + k) :: increase k tail
 
 // Point 4
 let rec add (p, a) (pt: PrizeTable) =
@@ -34,32 +31,22 @@ let rec add (p, a) (pt: PrizeTable) =
     | (p1, a1) :: tail -> (p1, a1) :: add (p, a) tail
 
 // Point 5
-let rec add' (p, a) (pt: PrizeTable) =
-    match pt with
-    | [] -> [ (p, a) ]
-    | (p1, a1) :: tail when a = a1 -> failwith "TWO EQUAL VALUES!!!"
-    | (p1, a1) :: tail when a < a1 -> (p, a) :: ((p1, a1) :: tail)
-    | (p1, a1) :: tail -> (p1, a1) :: add (p, a) tail
-
-let merge (pt1: PrizeTable) (pt2: PrizeTable) =
-    let rec aux' acc (pt: PrizeTable) =
-        match pt with
-        | [] -> acc
-        | [ x ] -> aux' (add' (x) acc) []
-        | x :: tail -> aux' (add' (x) acc) tail
-
-    aux' pt1 pt2
+let rec merge (pt1: PrizeTable) (pt2: PrizeTable) =
+    match (pt1, pt2) with
+    | [], [] -> []
+    | [], x -> x
+    | x, [] -> x
+    | (p1, a1) :: xs, (p2, a2) :: ys when a1 = a2 -> failwith "error two equal values"
+    | (p1, a1) :: xs, (p2, a2) :: ys when a1 < a2 -> (p1, a1) :: merge xs ((p2, a2) :: ys)
+    | (p1, a1) :: xs, (p2, a2) :: ys -> (p2, a2) :: merge ((p1, a1) :: xs) ys
 
 // Point 6
-let prizesFor' a list = List.filter (fun (_, x) -> x < a) list
+let prizesFor' a = List.filter (snd >> (<) a)
 
-let increase' k (list: ('a * int) list) =
-    List.map (fun (x, y) -> (x, y + k)) list
+let increase' k = List.map (snd >> (+) k)
 
-let merge' (ls1: PrizeTable) (ls2: PrizeTable) =
-    let temp = ls1 |> List.fold (fun acc x -> add' x acc) []
-
-    ls2 |> List.fold (fun acc x -> add' x acc) temp
+let merge' pt1 pt2 =
+    List.fold (fun ls x -> add x ls) pt1 pt2
 
 // Problem 2 (20%)
 let rec choose f =
@@ -140,42 +127,33 @@ let tc = N(2, true, [])
 let t3 = N(0, false, [ ta; tb; tc ])
 
 // Point 1
-let rec countNodes (N (x, y, xs): Trie<'a>) =
-    1 + (xs |> List.map countNodes |> List.sum)
+let rec countNodes (N (_, _, xs): Trie<'a>) = 1 + List.sumBy countNodes xs
 
 // Point 2
 type Word<'a> = 'a list
 
-let rec accept (w: Word<'a>) (t: Trie<'a>) =
-    match (w, t) with
-    | ([], N (_, _, _)) -> true
-    | ([ head ], N (x, y, _)) when x = head && y -> true
-    | (head :: tail, N (x, y, [])) -> false
-    | (head :: tail, N (x, y, z :: zs)) when x = head -> accept tail z || accept (head :: tail) (N(x, y, zs))
+let rec accept (w: Word<'a>) (N (x, y, ls): Trie<'a>) =
+    match w with
+    | [] -> true
+    | [ w1 ] when x = w1 -> true
+    | head :: tail when x = head -> List.exists (accept tail) ls
     | _ -> false
 
 // Point 3
-let rec wordsOf (t: Trie<'a>) : Set<Word<'a>> =
-    let rec aux (acc: Word<'a>) (t: Trie<'a>) =
-        match t with
-        | N (x, y, ls) when y -> ((x :: acc) |> List.rev) :: aux acc (N(x, not y, ls))
-        | N (x, y, []) -> []
-        | N (x, y, head :: tail) -> (aux (x :: acc) head) @ aux acc (N(x, y, tail))
+let rec wordsOf' (N (a, b, ch): Trie<'a>) =
+    match b with
+    | true -> [ [ a ] ] @ (ch |> List.collect wordsOf' |> List.map (fun x -> a :: x))
+    | false -> ch |> List.collect wordsOf' |> List.map (fun x -> a :: x)
 
-    aux [] t |> Set.ofList
+let rec wordsOf t = t |> wordsOf' |> Set.ofList
 
 // Point 4
-let rec uselessLeaves (t: Trie<'a>) =
-    match t with
-    | N (_, x, []) when x -> false
-    | N (_, _, []) -> true
-    | N (x, y, [ xs ]) -> uselessLeaves xs
-    | N (x, y, head :: tail) -> uselessLeaves head || uselessLeaves (N(x, y, tail))
+let rec uselessLeaves (N (a, b, ch): Trie<'a>) =
+    match ch with
+    | [] when b -> false
+    | [] -> true
+    | ch -> List.exists uselessLeaves ch
 
 // Point 5
-let max x y = if x < y then y else x
-
-let rec degree (t: Trie<'a>) =
-    match t with
-    | N (_, _, []) -> 0
-    | N (x, y, head :: tail) -> max ((head :: tail) |> List.length) (max (degree head) (degree (N(x, y, tail))))
+let rec degree (N (a, b, ch): Trie<'a>) =
+    List.max (List.length ch :: (List.map degree ch))

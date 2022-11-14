@@ -1,30 +1,29 @@
 // Problem 1 (20%)
 // Point 1
 let rec repeat s n =
-    [ 0 .. n - 1 ] |> List.fold (fun acc _ -> acc + s) ""
+    match n with
+    | 0 -> ""
+    | n when n < 0 -> failwith "ArgException"
+    | _ -> s + repeat s (n - 1)
+
+let repeat1 s n = String.replicate n s
 
 // Point 2
 let rec f (s1: string) (s2: string) n =
-    [ 0 .. n - 1 ]
-    |> List.map (fun x -> if x % 2 = 0 then s1 + "\n" else s2 + "\n")
-    |> List.fold (+) ""
+    match n % 2 = 0 with
+    | _ when n = 0 -> ""
+    | _ when n < 0 -> failwith "ArgException"
+    | true -> s1 + "\n" + f s1 s2 (n - 1)
+    | _ -> s2 + "\n" + f s1 s2 (n - 1)
 
 // Point 3
-let rec viz m n =
-    [ 0 .. n - 1 ]
-    |> List.map (fun x ->
-        if x % 2 = 0 then
-            repeat "XO" m + "\n"
-        else
-            repeat "OX" m + "\n")
-    |> List.fold (+) ""
-
+let rec viz m n = f (repeat "OX" m) (repeat "XO" m) 5
 
 // Point 4
 let rec repeat' (s: string) (acc: string) n =
     match n with
     | 0 -> acc
-    | n when n < 0 -> failwith "Can't repeat a negative number of times!"
+    | n when n < 0 -> failwith "ArgException"
     | n -> repeat' s (acc + s) (n - 1)
 
 // CONTINUATION BASED TOO HARD!!!!!!!!!
@@ -32,19 +31,20 @@ let rec repeat' (s: string) (acc: string) n =
 // Problem 2 (20%)
 // Point 1
 let rec mixMap f ls1 ls2 =
-    match (ls1, ls2) with
-    | ([], []) -> []
-    | (x :: xx, y :: yy) -> (f x, f y) :: mixMap f xx yy
+    match ls1, ls2 with
+    | [], [] -> []
+    | x :: xs, y :: ys -> (f x y) :: mixMap f xs ys
     | _ -> failwith "Can't mixMap unequal lists!"
 
+let rec mixMap' f = List.map2 (f)
 // Point 2
 let rec unmixMap f g (ls: ('a * 'b) list) =
-    let rec aux f g (a, b) (ls: ('a * 'b) list) =
-        match ls with
-        | [] -> (List.rev a, List.rev b)
-        | (a1, b1) :: xs -> aux f g (f a1 :: a, g b1 :: b) xs
+    match ls with
+    | [] -> ([], [])
+    | (x, y) :: tail -> let xs, ys = unmixMap f g tail in (f x :: xs, g y :: ys)
 
-    aux f g ([], []) ls
+let rec unmixMap' f g ls =
+    let x, y = List.unzip ls in List.map (f) x, List.map (g) y
 
 // Point 3
 (*
@@ -68,7 +68,17 @@ let rec reflect (t: Tree<'a>) =
     | Br (t1, a, t2) -> Br((reflect t2), a, (reflect t1))
 
 // Point 2
-// ACCUMULATE?!?
+let rec getSum t =
+    match t with
+    | Lf -> 0
+    | Br (t1, a, t2) -> a + getSum t1 + getSum t2
+
+let rec increment n t =
+    match t with
+    | Lf -> Lf
+    | Br (t1, a, t2) -> Br(increment (n + a) t1, n + a, increment (getSum t1 + a + n) t2)
+
+let accumulate = increment 0
 
 let rec k i t =
     match t with
@@ -106,11 +116,11 @@ let math: CourseDesc = ("Advanced Engineering Mathematics I", 10)
 let courses: CourseBase =
     Map.empty |> Map.add 02157 func |> Map.add 02160 java |> Map.add 01006 math
 
-let isValidCourseDesc ((_, ects): CourseDesc) = not (ects = 0) && (ects % 5 = 0)
+let isValidCourseDesc ((_, ects): CourseDesc) = ects <> 0 && (ects % 5 = 0)
 
 // Point 2
 let rec isValidCourseBase (cb: CourseBase) =
-    cb |> Map.values |> Seq.forall isValidCourseDesc
+    Map.forall (fun _ -> isValidCourseDesc) cb
 
 type Mandatory = Set<CourseNo>
 type Optional = Set<CourseNo>
@@ -118,13 +128,11 @@ type CourseGroup = Mandatory * Optional
 
 // Point 3
 let rec disjoint (set1: Set<'a>) (set2: Set<'a>) =
-    set1 |> Set.difference set2 |> Set.isEmpty
+    (set1, set2) ||> Set.difference |> Set.isEmpty
 
 // Point 4
-let flip f a b = f b a
-
 let sumECTS (set: Set<CourseNo>) (cb: CourseBase) =
-    set |> Set.map (flip Map.find cb) |> Set.map snd |> Set.fold (+) 0
+    set |> Set.toList |> List.sumBy (fun x -> Map.find x cb |> snd)
 
 // Point 5
 let rec isValidCourseGroup ((man, opt): CourseGroup) (cb: CourseBase) =
@@ -150,4 +158,4 @@ let isValid ((bns, tc, ppc, ep): FlagModel) (cb: CourseBase) =
 let checkPlan (plan: CoursePlan) ((bns, tc, ppc, ep): FlagModel) (cb: CourseBase) =
     isValid (bns, tc, ppc, ep) cb
     && isValidCourseBase cb
-    && plan |> Set.forall (flip Map.containsKey cb)
+    && Set.forall (fun x -> Map.containsKey x cb) plan
