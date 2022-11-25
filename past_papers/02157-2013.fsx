@@ -4,32 +4,28 @@ type Multiset<'a when 'a: equality> = ('a * int) list
 let example: Multiset<string> = [ ("b", 3); ("a", 5); ("d", 1) ]
 
 // Point 1
-let rec inv (ms: Multiset<'a>) =
-    match ms with
-    | [] -> true
-    | (a, _) :: tail -> List.forall (fun (x, _) -> x <> a) tail && inv tail
+let rec inv (ms: Multiset<'a>) : bool = ms = List.distinctBy (fst) ms
 
 // Point 2
-let rec insert a n (ms: Multiset<'a>) =
+let rec insert a n (ms: Multiset<'a>) : Multiset<'a> =
     match ms with
     | [] -> [ (a, n) ]
     | (x, y) :: tail when a = x -> (x, (y + n)) :: tail
     | head :: tail -> head :: insert a n tail
 
 // Point 3
-// 'a -> Multiset<'a> -> int when 'a equality
-let numberOf e (ms: Multiset<'a>) =
+let numberOf e (ms: Multiset<'a>) : int =
     List.sumBy (fun (x, y) -> if x = e then y else 0) ms
 
 // Point 4
-let delete' e (ms: Multiset<'a>) =
+let delete e (ms: Multiset<'a>) : Multiset<'a> =
     List.map (fun (x, n) -> if x = e then (x, n - 1) else (x, n)) ms
 
 // Point 5
-let rec union ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
+let rec union ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) : Multiset<'a> =
     match ms2 with
     | [] -> ms1
-    | (x, y) :: tail -> union ((insert x y ms1), tail)
+    | (x, y) :: tail -> union (insert x y ms1, tail)
 
 let union' ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
     (ms1, ms2) ||> List.fold (fun ms (x, y) -> insert x y ms)
@@ -40,14 +36,14 @@ let exampleMap: MultisetMap<string> =
     Map.empty |> Map.add "b" 3 |> Map.add "a" 5 |> Map.add "d" 1
 
 // Point 6
-let inv' (msm: MultisetMap<string>) = Map.forall (fun _ y -> y > 0) msm
+let inv1 (msm: MultisetMap<'a>) : bool = Map.forall (fun _ y -> y > 0) msm
 
-let insert'' a n (msm: MultisetMap<string>) =
+let insert1 a n (msm: MultisetMap<'a>) : MultisetMap<'a> =
     match Map.tryFind a msm with
     | Some x -> Map.add a (x + n) msm
     | None -> Map.add a n msm
 
-let union'' (msm1: MultisetMap<string>) (msm2: MultisetMap<string>) =
+let union1 (msm1: MultisetMap<'a>) (msm2: MultisetMap<'a>) : MultisetMap<'a> =
     Map.fold (fun msm a b -> Map.add a b msm) msm1 msm2
 
 // Problem 2 (30%)
@@ -84,7 +80,14 @@ let rec f' acc i =
     | [] -> List.rev acc
     | x :: xs -> f' ((i, x) :: acc) (i * i) xs
 
-// Still don't understand continuation based tail-recursion.
+let rec f'' k i =
+    function
+    | [] -> k []
+    | x :: xs -> f'' (fun ls -> k ((i, x) :: ls)) (i * i) xs
+
+(*
+    Accumulation based tail recursion is much easier to understand and write, continuation based is really nice from the insight you get from it.
+*)
 
 let rec h f (n, e) =
     match n with
@@ -160,23 +163,23 @@ let ch4 = ("Conclusion", [ sec41; sec42 ])
 let book1 = [ ch1; ch2; ch3; ch4 ]
 
 //  Point 1
-let rec maxL = List.max
+let rec maxL (ls: 'a list) : 'a = List.max ls
 
 // Point 2
-let overview (book: Book) = List.map fst book
+let overview (book: Book) : Title list = List.map fst book
 
 // Point 3
-let rec depthSection ((x, xs): Section) = xs |> List.map depthElem |> List.max
+let rec depthSection ((x, xs): Section) : int = xs |> List.map depthElem |> List.max
 
-and depthElem (elem: Elem) =
+and depthElem (elem: Elem) : int =
     match elem with
     | Par _ -> 0
     | Sub x -> depthSection x
 
-let depthChapter ((x, xs): Chapter) =
+let depthChapter ((x, xs): Chapter) : int =
     xs |> List.map (depthSection >> (+) 1) |> List.max
 
-let depthBook (book: Book) =
+let depthBook (book: Book) : int =
     book |> List.map depthChapter |> List.max
 
 type Numbering = int list
@@ -184,21 +187,23 @@ type Entry = Numbering * Title
 type Toc = Entry list
 
 // Point 4
+let rec sectionToc n m (l, ls) : Toc =
+    ls
+    |> List.filter (fun x ->
+        match x with
+        | Par _ -> false
+        | Sub _ -> true)
+    |> List.mapi (fun k el ->
+        match el with
+        | Par _ -> failwith "unreachable"
+        | Sub (x, _) -> ([ n; m; (k + 1) ], x))
+
+let rec chapterToc n ((x, ls): Chapter) : Toc =
+    ls
+    |> List.mapi (fun m (a, b) -> ([ n; m + 1 ], a) :: sectionToc n (m + 1) (a, b))
+    |> List.concat
+
 let rec toc (book: Book) : Toc =
-    let rec sectionAux n m k (l, ls) : Toc =
-        match ls with
-        | [] -> []
-        | Par x :: tail -> sectionAux n m k (l, tail)
-        | Sub (x, _) :: tail -> ([ n; m; k ], x) :: sectionAux n m (k + 1) (l, tail)
-
-    let rec chapterAux n m (chapter: Chapter) : Toc =
-        match chapter with
-        | (_, []) -> []
-        | (x, (a, b) :: tail) -> (([ n; m ], a) :: sectionAux n m 1 (a, b)) @ chapterAux n (m + 1) (x, tail)
-
-    let rec bookAux n (book: Book) : Toc =
-        match book with
-        | [] -> []
-        | (x, xs) :: tail -> (([ n ], x) :: chapterAux n 1 (x, xs)) @ bookAux (n + 1) tail
-
-    bookAux 1 book
+    book
+    |> List.mapi (fun n (x, xs) -> ([ n + 1 ], x) :: chapterToc (n + 1) (x, xs))
+    |> List.concat

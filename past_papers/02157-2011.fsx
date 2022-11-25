@@ -1,10 +1,10 @@
 // Problem 1 30%
-type name = string
-type phone = int
-type level = int
+type Name = string
+type Phone = int
+type Level = int
 
-type description = phone * level
-type register = (name * description) list
+type Description = Phone * Level
+type Register = (Name * Description) list
 
 // Point 1
 let Joe = ("Joe", (10101010, 4))
@@ -12,18 +12,22 @@ let Sal = ("Sal", (11111111, 2))
 let Sam = ("Sam", (12121212, 7))
 let Jane = ("Jane", (13131313, 1))
 
-let register: register = [ Joe; Sal; Sam; Jane ]
+let register: Register = [ Joe; Sal; Sam; Jane ]
 
 // Point 2
-let getPhone (name: name) (register: register) =
-    List.sumBy (fun (n, (x, _)) -> if n = name then x else 0) register
+let getPhone (name: Name) (register: Register) : Phone =
+    match List.filter (fst >> (=) name) register with
+    | [] -> failwith "No Phone Entry"
+    | [ (_, (x, _)) ] -> x
+    | x :: xs -> failwith "Multiple People with the same name"
 
 // Point 3
-let delete (name: name, register: register) = List.filter (fst >> (<>) name) register
+let delete (name: Name, register: Register) : Register = List.filter (fst >> (<>) name) register
 
 // Point 4s
-let getCandidates (level: level) (registers: register) =
+let getCandidates (level: Level) (registers: Register) : (Name * Phone) list =
     List.collect (fun (a, (b, c)) -> if abs (c - level) < 3 then [ (a, b) ] else []) register
+
 // Problem 2 30%
 type exp =
     | C of int
@@ -36,18 +40,18 @@ let exp3 = BinOp(exp1, "+", exp2)
 let exp4 = BinOp(exp2, "*", exp3)
 
 // Point 2
-let rec toString (exp: exp) =
+let rec toString (exp: exp) : string =
     match exp with
     | C x -> string x
     | BinOp (a, b, c) -> "(" + toString a + b + toString c + ")"
 
 // Point 3
-let rec extract' (exp: exp) =
+let rec extract' (exp: exp) : string list =
     match exp with
     | C _ -> []
     | BinOp (a, b, c) -> b :: extract' a @ extract' c
 
-let extract (exp: exp) = extract' exp |> Set.ofList
+let extract (exp: exp) : Set<string> = extract' exp |> Set.ofList
 
 // Point 4
 type expr =
@@ -56,8 +60,8 @@ type expr =
     | Id of string
     | Def of string * expr * expr
 
-let rec isDef (expr: expr) =
-    let rec aux (id: string) (expr: expr) =
+let rec isDef (expr: expr) : bool =
+    let rec aux (id: string) (expr: expr) : bool =
         match expr with
         | C _ -> true
         | BinOp (x, _, y) -> aux id x && aux id y

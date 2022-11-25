@@ -9,24 +9,24 @@ let res2: Result = ("Doctor", 15)
 let res3: Result = ("Rory", 5)
 let results: Result list = [ res1; res2; res3 ]
 
-let legalResults (results: Result list) =
+let legalResults (results: Result list) : bool =
     List.forall (fun (_, x) -> x <= 100 && x >= 0) results
 
 // Point 2
-let maxScore (resutls: Result list) = results |> List.maxBy snd |> fst
+let maxScore (resutls: Result list) : Name = results |> List.maxBy snd |> fst
 
 // Point 3
-let best (results: Result list) = List.maxBy snd results
+let best (results: Result list) : Result = List.maxBy snd results
 
 // Point 4
-let average (results: Result list) =
+let average (results: Result list) : float =
     float (List.sumBy snd results) / float (List.length results)
 
 // Point 5
-let delete (res: Result) (results: Result list) = List.filter ((<>) res) results
+let delete (res: Result) (results: Result list) : Result list = List.filter ((<>) res) results
 
 // Point 6
-let bestN (results: Result list) n =
+let bestN (results: Result list) n : Result list =
     results |> List.sortByDescending snd |> List.take n
 
 // Problem 2 (35%)
@@ -40,16 +40,16 @@ type Decl = string * Typ
 // Point 1
 let decs: Decl list = [ ("2", Integer); ("True", Boolean); ("1", Integer) ]
 
-let distinctVars (declarations: Decl list) =
+let distinctVars (declarations: Decl list) : bool =
     declarations = List.distinct declarations
 
 type SymbolTable = Map<string, Typ>
 
 // Point 2
-let toSymbolTable (declarations: Decl list) = Map.ofList declarations
+let toSymbolTable (declarations: Decl list) : SymbolTable = Map.ofList declarations
 // Point 3
-let extendST (sym: SymbolTable) (declarations: Decl list) =
-    Map.fold (fun acc a b -> Map.add a b acc) sym (toSymbolTable declarations)
+let extendST (sym: SymbolTable) (declarations: Decl list) : SymbolTable =
+    List.fold (fun acc (a, b) -> Map.add a b acc) sym declarations
 
 type Exp =
     | V of string
@@ -61,13 +61,13 @@ let madd: SymbolTable =
     Map.empty |> Map.add ">" Boolean |> Map.add "x" Integer |> Map.add "y" Integer
 
 // Point 4
-let rec symbolsDefined (sym: SymbolTable) (exp: Exp) =
+let rec symbolsDefined (sym: SymbolTable) (exp: Exp) : bool =
     match exp with
     | V x -> Map.containsKey x sym
     | A (x, xs) -> Map.containsKey x sym && List.forall (symbolsDefined sym) xs
 
 // Point 5
-let rec typOf (sym: SymbolTable) (exp: Exp) =
+let rec typOf (sym: SymbolTable) (exp: Exp) : Typ =
     match exp with
     | V x -> Map.find x sym
     | A (x, xs) -> Map.find x sym
@@ -80,7 +80,7 @@ type Stm =
     | Block of Decl list * Stm
 
 // Point 6
-let rec wellTyped (sym: SymbolTable) (stm: Stm) =
+let rec wellTyped (sym: SymbolTable) (stm: Stm) : bool =
     match stm with
     | Ass (x, e) -> Map.containsKey x sym && Map.find x sym = typOf sym e
     | Seq (stm1, stm2) -> wellTyped sym stm1 && wellTyped sym stm2
@@ -129,7 +129,7 @@ let b1 = B true
 let c1 = C(a1, b1)
 
 // Point 3
-let c2 = C(A [ 2; 3; 4 ], B(Some true))
+let c2: T<int list, bool option> = C(A [ 2; 3; 4 ], B(Some true))
 
 // Point 4
 // f1 : T<'a, 'b> -> int

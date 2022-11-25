@@ -83,7 +83,13 @@ let rec choose' f acc =
         | Some y -> choose' f (y :: acc) rest
 
 // Point 4
-// Continuation based is literally cursed!!!
+let rec choose'' f k =
+    function
+    | [] -> k []
+    | x :: rest ->
+        match f x with
+        | None -> choose'' f k rest
+        | Some y -> choose'' f (fun x -> k (y :: x)) rest
 
 // Problem 3 (15%)
 type T =

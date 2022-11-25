@@ -163,7 +163,11 @@ let rec f =
 *)
 
 // Point 5
-// I CAN'T
+let rec f' k =
+    function
+    | A a -> k ([ a ], [])
+    | B b -> k ([], [ b ])
+    | Node (t1, t2) -> f' (fun (xs1, ys1) -> f' (fun (xs2, ys2) -> (xs1 @ xs2, ys1 @ ys2)) t2) t1
 
 // Problem 5 (30%)
 type T<'a> = N of 'a * T<'a> list

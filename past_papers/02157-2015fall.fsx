@@ -31,7 +31,7 @@ let trf =
 
 // Point 5
 let isDefined (ats: Usage list) (trf: Tariff) =
-    ats |> List.forall (fun (x, _) -> Map.containsKey x trf)
+    List.forall (fun (x, _) -> Map.containsKey x trf) ats
 
 // Point 6
 let priceOf (ats: Usage list) (trf: Tariff) =
@@ -80,7 +80,7 @@ let riv = R("R", 10, [ riv1; riv2; riv3 ])
 let rec contains n (R (x, _, xs): River) = x = n || List.exists (contains n) xs
 
 // Point 3
-let rec allNames (R (x, _, xs): River) = [ x ] @ List.collect allNames xs
+let rec allNames (R (x, _, xs): River) = x :: List.collect allNames xs
 
 // Point 4
 let rec totalFlow (R (x, y, xs): River) = y + List.sumBy totalFlow xs

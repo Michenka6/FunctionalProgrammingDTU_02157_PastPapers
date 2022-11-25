@@ -4,14 +4,14 @@ type Rel<'a, 'b> = ('a * 'b list) list
 let rel: Rel<int, string> = [ (1, [ "a"; "b"; "c" ]); (4, [ "b"; "e" ]) ]
 
 // Point 1
-let apply a (rel: Rel<'a, 'b>) =
-    List.collect (fun (x, y) -> if x = a then [ y ] else []) rel
+let apply a (rel: Rel<'a, 'b>) : 'b list =
+    List.collect (fun (x, y) -> if x = a then y else []) rel
 
 // Point 2
-let inRelation x y (rel: Rel<'a, 'b>) = (x, rel) ||> apply |> List.contains y
+let inRelation x y (rel: Rel<'a, 'b>) : bool = (x, rel) ||> apply |> List.contains y
 
 // Point 3
-let insert x y (rel: Rel<'a, 'b>) =
+let insert x y (rel: Rel<'a, 'b>) : Rel<'a, 'b> =
     List.map (fun (a, b) -> if a = x then (a, y :: b) else (a, b)) rel
 
 // Point 4
@@ -21,7 +21,7 @@ let toRel (ls: ('a * 'b) list) : Rel<'a, 'b> =
 // Problem 2 (25%)
 // Point 1
 let multTable n =
-    (+) 1 |> Seq.initInfinite |> Seq.filter (fun x -> x % n = 0) |> Seq.take 10
+    (+) 1 |> Seq.initInfinite |> Seq.filter ((%) n >> (=) 0) |> Seq.take 10
 
 // Point 2
 let rec tableOf x y f =
@@ -32,12 +32,7 @@ let rec tableOf x y f =
     }
 
 // Point 3
-let rec repeatChar x =
-    match x with
-    | 0 -> ""
-    | n -> "a" + repeatChar (n - 1)
-
-let aSeq = (+) 1 |> Seq.initInfinite |> Seq.map (fun x -> repeatChar x)
+let aSeq = (+) 1 |> Seq.initInfinite |> Seq.map (fun x -> String.replicate x "a")
 
 let rec f i =
     function
@@ -53,9 +48,12 @@ let rec f i =
 let rec f' acc i =
     function
     | [] -> List.rev acc
-    | x :: xs -> f' ((x + i) :: acc) (i * 1) xs
+    | x :: xs -> f' ((x + i) :: acc) (i * i) xs
 
-// Continuation based tail-recursion is not for me :(
+let rec f'' k i =
+    function
+    | [] -> k []
+    | x :: xs -> f'' (fun y -> k ((x + i) :: y)) (i * i) xs
 
 // Problem 3 (20%)
 type T<'a> = N of 'a * T<'a> list
@@ -150,13 +148,12 @@ let allDescriptions (t: ProbTree) : Set<Description> =
             aux (((S, ds) :: ls), p * n, str) tr
             @ aux (((F, ds) :: ls), (1.0 - p) * n, str) tl
 
-    aux ([], 1.0, "") t |> Set.ofList
+    (([], 1.0, ""), t) ||> aux |> Set.ofList
 
 // Point 5
 let probabilityOf (t: ProbTree) pred =
-    allDescriptions t
-    |> Set.toList
-    |> List.sumBy (fun (_, p, c) -> if pred c then p else 0.0)
+    (0.0, allDescriptions t)
+    ||> Set.fold (fun acc (_, p, c) -> if pred c then acc + p else acc)
 
 // Point 6
 // TRIVIAL
