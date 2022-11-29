@@ -4,8 +4,16 @@ type Rel<'a, 'b> = ('a * 'b list) list
 let rel: Rel<int, string> = [ (1, [ "a"; "b"; "c" ]); (4, [ "b"; "e" ]) ]
 
 // Point 1
+let rec lookUp a =
+    function
+    | [] -> None
+    | (x, y) :: tail when x = a -> Some y
+    | _ :: tail -> lookUp a tail
+
 let apply a (rel: Rel<'a, 'b>) : 'b list =
-    List.collect (fun (x, y) -> if x = a then y else []) rel
+    match lookUp a rel with
+    | None -> failwith "No relation found"
+    | Some b -> b
 
 // Point 2
 let inRelation x y (rel: Rel<'a, 'b>) : bool = (x, rel) ||> apply |> List.contains y
@@ -21,7 +29,7 @@ let toRel (ls: ('a * 'b) list) : Rel<'a, 'b> =
 // Problem 2 (25%)
 // Point 1
 let multTable n =
-    (+) 1 |> Seq.initInfinite |> Seq.filter ((%) n >> (=) 0) |> Seq.take 10
+    (+) 1 |> Seq.initInfinite |> Seq.filter (fun x -> x % n = 0) |> Seq.take 10
 
 // Point 2
 let rec tableOf x y f =

@@ -4,7 +4,7 @@ type Multiset<'a when 'a: equality> = ('a * int) list
 let example: Multiset<string> = [ ("b", 3); ("a", 5); ("d", 1) ]
 
 // Point 1
-let rec inv (ms: Multiset<'a>) : bool = ms = List.distinctBy (fst) ms
+let rec inv (ms: Multiset<'a>) : bool = ms = List.distinctBy fst ms
 
 // Point 2
 let rec insert a n (ms: Multiset<'a>) : Multiset<'a> =
@@ -32,8 +32,7 @@ let union' ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
 
 type MultisetMap<'a when 'a: comparison> = Map<'a, int>
 
-let exampleMap: MultisetMap<string> =
-    Map.empty |> Map.add "b" 3 |> Map.add "a" 5 |> Map.add "d" 1
+let exampleMap: MultisetMap<string> = Map.ofList [ ("b", 3); ("a", 5); ("d", 1) ]
 
 // Point 6
 let inv1 (msm: MultisetMap<'a>) : bool = Map.forall (fun _ y -> y > 0) msm
@@ -177,7 +176,7 @@ and depthElem (elem: Elem) : int =
     | Sub x -> depthSection x
 
 let depthChapter ((x, xs): Chapter) : int =
-    xs |> List.map (depthSection >> (+) 1) |> List.max
+    xs |> List.map (fun x -> 1 + depthSection x) |> List.max
 
 let depthBook (book: Book) : int =
     book |> List.map depthChapter |> List.max

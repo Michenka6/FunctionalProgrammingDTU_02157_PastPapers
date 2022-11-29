@@ -22,7 +22,7 @@ let rec h =
     | B s -> s
     | C (t1, t2) -> h t1 + h t2
 
-let sq = Seq.initInfinite (fun i -> 3 * i)
+let sq = Seq.initInfinite (fun i -> i * 3)
 
 let k j =
     seq {
@@ -30,9 +30,9 @@ let k j =
             yield (i, i - j)
     }
 
-let xs = Seq.toList (Seq.take 4 sq)
+let xs = (4, sq) ||> Seq.take |> Seq.toList
 
-let ys = Seq.toList (Seq.take 4 (k 2))
+let ys = (4, k 2) ||> Seq.take |> Seq.toList
 
 // Point 1
 let p11 = f 4 3
@@ -85,11 +85,12 @@ let rec f'' g n =
 let ordered ls = ls = List.sort ls
 
 // Point 2
-let smallerThanAll x = List.forall (x (<))
+let smallerThanAll x = List.forall (fun a -> x < a)
 
 // Point 3
 let insertBefore p x xs =
-    List.takeWhile (p >> not) xs @ [ x ] @ List.skipWhile (p >> not) xs
+    List.takeWhile (fun a -> not (p a)) xs
+    @ [ x ] @ List.skipWhile (fun a -> not (p a)) xs
 
 // Point 4
 type Sex =

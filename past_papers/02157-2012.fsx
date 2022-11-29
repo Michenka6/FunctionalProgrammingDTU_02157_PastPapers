@@ -23,7 +23,7 @@ let average (results: Result list) : float =
     float (List.sumBy snd results) / float (List.length results)
 
 // Point 5
-let delete (res: Result) (results: Result list) : Result list = List.filter ((<>) res) results
+let delete (res: Result) (results: Result list) : Result list = List.filter (fun x -> x <> res) results
 
 // Point 6
 let bestN (results: Result list) n : Result list =
@@ -41,7 +41,7 @@ type Decl = string * Typ
 let decs: Decl list = [ ("2", Integer); ("True", Boolean); ("1", Integer) ]
 
 let distinctVars (declarations: Decl list) : bool =
-    declarations = List.distinct declarations
+    declarations = List.distinctBy fst declarations
 
 type SymbolTable = Map<string, Typ>
 
@@ -58,7 +58,7 @@ type Exp =
 let expression = A(">", [ V "x"; V "y" ])
 
 let madd: SymbolTable =
-    Map.empty |> Map.add ">" Boolean |> Map.add "x" Integer |> Map.add "y" Integer
+    Map.ofList [ (">", Boolean); ("x", Integer); ("y", Integer) ]
 
 // Point 4
 let rec symbolsDefined (sym: SymbolTable) (exp: Exp) : bool =

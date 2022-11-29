@@ -15,18 +15,26 @@ let Jane = ("Jane", (13131313, 1))
 let register: Register = [ Joe; Sal; Sam; Jane ]
 
 // Point 2
+let rec lookUp a =
+    function
+    | [] -> None
+    | (x, y) :: tail when x = a -> Some y
+    | _ :: tail -> lookUp a tail
+
 let getPhone (name: Name) (register: Register) : Phone =
-    match List.filter (fst >> (=) name) register with
-    | [] -> failwith "No Phone Entry"
-    | [ (_, (x, _)) ] -> x
-    | x :: xs -> failwith "Multiple People with the same name"
+    match lookUp name register with
+    | None -> failwith ("No phone  entry by the name " + name)
+    | Some (x, _) -> x
 
 // Point 3
-let delete (name: Name, register: Register) : Register = List.filter (fst >> (<>) name) register
+let delete (name: Name, register: Register) : Register =
+    List.filter (fun (x, _) -> x <> name) register
 
 // Point 4s
 let getCandidates (level: Level) (registers: Register) : (Name * Phone) list =
-    List.collect (fun (a, (b, c)) -> if abs (c - level) < 3 then [ (a, b) ] else []) register
+    registers
+    |> List.filter (fun (_, (_, c)) -> c - level < 3)
+    |> List.map (fun (a, (b, _)) -> (a, b))
 
 // Problem 2 30%
 type exp =
@@ -78,7 +86,8 @@ type 'a tree =
 let rec f (n, t) =
     match t with
     | Lf -> Lf
-    | Br (a, t1, t2) -> if n > 0 then Br(a, f (n - 1, t1), f (n - 1, t2)) else Lf
+    | Br (a, t1, t2) when n > 0 -> Br(a, f (n - 1, t1), f (n - 1, t2))
+    | _ -> Lf
 
 let rec g p =
     function

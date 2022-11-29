@@ -8,7 +8,7 @@ let ad3: Usage = ("dishwasher", 2)
 let ats: Usage list = [ ad1; ad2; ad3; ad1; ad2 ]
 
 // Point 1
-let inv (ls: Usage list) = List.forall (snd >> (>) 0) ls
+let inv (ls: Usage list) = List.forall (fun (_, x) -> x > 0) ls
 
 // Point 2
 let durationOf (a: Appliance) (ls: Usage list) =
@@ -18,7 +18,7 @@ let durationOf (a: Appliance) (ls: Usage list) =
 let wellFormed (ls: Usage list) = inv ls && List.sumBy snd ls <= 24
 
 // Point 4
-let delete (a: Appliance) (ls: Usage list) = List.filter (fst >> (<>) a) ls
+let delete (a: Appliance) (ls: Usage list) = List.filter (fun (x, _) -> x <> a) ls
 
 type Price = int
 type Tariff = Map<Appliance, Price>

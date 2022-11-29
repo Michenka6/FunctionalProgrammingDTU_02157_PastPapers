@@ -36,15 +36,15 @@ let rec mixMap f ls1 ls2 =
     | x :: xs, y :: ys -> (f x y) :: mixMap f xs ys
     | _ -> failwith "Can't mixMap unequal lists!"
 
-let rec mixMap' f = List.map2 (f)
+let rec mixMap' f = List.map2 f
 // Point 2
 let rec unmixMap f g (ls: ('a * 'b) list) =
     match ls with
     | [] -> ([], [])
-    | (x, y) :: tail -> let xs, ys = unmixMap f g tail in (f x :: xs, g y :: ys)
+    | (x, y) :: tail -> let (xs, ys) = unmixMap f g tail in (f x :: xs, g y :: ys)
 
 let rec unmixMap' f g ls =
-    let x, y = List.unzip ls in List.map (f) x, List.map (g) y
+    let x, y = List.unzip ls in (List.map f x, List.map g y)
 
 // Point 3
 (*
@@ -65,7 +65,7 @@ let t: Tree<int> =
 let rec reflect (t: Tree<'a>) =
     match t with
     | Lf -> Lf
-    | Br (t1, a, t2) -> Br((reflect t2), a, (reflect t1))
+    | Br (t1, a, t2) -> Br(reflect t2, a, reflect t1)
 
 // Point 2
 let rec getSum t =
@@ -113,8 +113,7 @@ let func: CourseDesc = ("Functional Programming", 5)
 let java: CourseDesc = ("Object-Oriented Programming", 10)
 let math: CourseDesc = ("Advanced Engineering Mathematics I", 10)
 
-let courses: CourseBase =
-    Map.empty |> Map.add 02157 func |> Map.add 02160 java |> Map.add 01006 math
+let courses: CourseBase = Map.ofList [ (02157, func); (02160, java); (01006, math) ]
 
 let isValidCourseDesc ((_, ects): CourseDesc) = ects <> 0 && (ects % 5 = 0)
 

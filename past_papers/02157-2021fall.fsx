@@ -162,4 +162,4 @@ let rec uselessLeaves (N (a, b, ch): Trie<'a>) =
 
 // Point 5
 let rec degree (N (a, b, ch): Trie<'a>) =
-    List.max (List.length ch :: (List.map degree ch))
+    List.max (List.length ch :: List.map degree ch)

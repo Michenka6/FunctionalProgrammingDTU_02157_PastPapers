@@ -11,6 +11,7 @@ let sb: Scoreboard =
       ("Peter", "May Fishing", 30)
       ("Joe", "May Fishing", 28)
       ("Paul", "June Fishing", 28) ]
+
 // Point 1
 let rec inv (sb: Scoreboard) =
     match sb with
@@ -47,7 +48,7 @@ let rec top k (sb: Scoreboard) =
     if k < 0 || k > (List.length sb) then
         None
     else
-        Some(sb |> List.take k)
+        Some(List.take k sb)
 
 // Problem 2 (15%)
 // Point 1
@@ -58,7 +59,7 @@ let rec replace a b xs =
     | head :: tail -> head :: replace a b tail
 
 let replace' a b =
-    List.map (fun x -> if x = a then b else a)
+    List.map (fun x -> if x = a then b else x)
 
 // Point 2
 (*
@@ -97,7 +98,7 @@ let seq2 =
                 yield (i, j)
     }
 
-let val2 = Seq.toList (Seq.take 10 seq2)
+let val2 = (10, seq2) ||> Seq.take |> Seq.toList
 
 // Point 1
 (*
