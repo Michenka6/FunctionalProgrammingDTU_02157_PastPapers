@@ -19,12 +19,12 @@ let apply a (rel: Rel<'a, 'b>) : 'b list =
 let inRelation x y (rel: Rel<'a, 'b>) : bool = (x, rel) ||> apply |> List.contains y
 
 // Point 3
-let insert x y (rel: Rel<'a, 'b>) : Rel<'a, 'b> =
-    List.map (fun (a, b) -> if a = x then (a, y :: b) else (a, b)) rel
+let insert x y : (Rel<'a, 'b> -> Rel<'a, 'b>) =
+    List.map (fun (a, b) -> if a = x then (a, y :: b) else (a, b))
 
 // Point 4
-let toRel (ls: ('a * 'b) list) : Rel<'a, 'b> =
-    ([], ls) ||> List.fold (fun acc (x, y) -> insert x y acc)
+let toRel (ls: ('a * 'b) list) =
+    List.fold (fun acc (x, y) -> insert x y acc) [] ls
 
 // Problem 2 (25%)
 // Point 1
@@ -115,14 +115,14 @@ let exp =
     Branch(">2", 0.67, Branch(">3", 0.5, Leaf "A", Leaf "B"), Branch(">3", 0.5, Leaf "C", Leaf "D"))
 
 // Point 1
-let rec probOK (t: ProbTree) =
-    match t with
+let rec probOK =
+    function
     | Leaf _ -> true
     | Branch (_, x, b1, b2) -> (0.0 <= x && x <= 1.0) && probOK b1 && probOK b2
 
 // Point 2
-let rec isSample ((os: Sample), (t: ProbTree)) =
-    match (os, t) with
+let rec isSample =
+    function
     | ([], Leaf _) -> true
     | (x :: xs, Branch (_, _, tl, tr)) ->
         match x with

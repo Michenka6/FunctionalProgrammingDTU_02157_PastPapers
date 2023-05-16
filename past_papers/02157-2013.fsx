@@ -7,19 +7,19 @@ let example: Multiset<string> = [ ("b", 3); ("a", 5); ("d", 1) ]
 let rec inv (ms: Multiset<'a>) : bool = ms = List.distinctBy fst ms
 
 // Point 2
-let rec insert a n (ms: Multiset<'a>) : Multiset<'a> =
-    match ms with
+let rec insert a n =
+    function
     | [] -> [ (a, n) ]
     | (x, y) :: tail when a = x -> (x, (y + n)) :: tail
     | head :: tail -> head :: insert a n tail
 
 // Point 3
-let numberOf e (ms: Multiset<'a>) : int =
-    List.sumBy (fun (x, y) -> if x = e then y else 0) ms
+let numberOf e =
+    List.sumBy (fun (x, y) -> if x = e then y else 0)
 
 // Point 4
-let delete e (ms: Multiset<'a>) : Multiset<'a> =
-    List.map (fun (x, n) -> if x = e then (x, n - 1) else (x, n)) ms
+let delete e =
+    List.map (fun (x, n) -> if x = e then (x, n - 1) else (x, n))
 
 // Point 5
 let rec union ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) : Multiset<'a> =
@@ -32,7 +32,7 @@ let union' ((ms1: Multiset<'a>), (ms2: Multiset<'a>)) =
 
 type MultisetMap<'a when 'a: comparison> = Map<'a, int>
 
-let exampleMap: MultisetMap<string> = Map.ofList [ ("b", 3); ("a", 5); ("d", 1) ]
+let exampleMap: MultisetMap<string> = Map [ ("b", 3); ("a", 5); ("d", 1) ]
 
 // Point 6
 let inv1 (msm: MultisetMap<'a>) : bool = Map.forall (fun _ y -> y > 0) msm
@@ -162,24 +162,23 @@ let ch4 = ("Conclusion", [ sec41; sec42 ])
 let book1 = [ ch1; ch2; ch3; ch4 ]
 
 //  Point 1
-let rec maxL (ls: 'a list) : 'a = List.max ls
+let rec maxL = List.max
 
 // Point 2
-let overview (book: Book) : Title list = List.map fst book
+let overview: (Book -> Title list) = List.map fst
 
 // Point 3
 let rec depthSection ((x, xs): Section) : int = xs |> List.map depthElem |> List.max
 
-and depthElem (elem: Elem) : int =
-    match elem with
+and depthElem =
+    function
     | Par _ -> 0
     | Sub x -> depthSection x
 
 let depthChapter ((x, xs): Chapter) : int =
     xs |> List.map (fun x -> 1 + depthSection x) |> List.max
 
-let depthBook (book: Book) : int =
-    book |> List.map depthChapter |> List.max
+let depthBook = List.map depthChapter >> List.max
 
 type Numbering = int list
 type Entry = Numbering * Title
@@ -202,7 +201,6 @@ let rec chapterToc n ((x, ls): Chapter) : Toc =
     |> List.mapi (fun m (a, b) -> ([ n; m + 1 ], a) :: sectionToc n (m + 1) (a, b))
     |> List.concat
 
-let rec toc (book: Book) : Toc =
-    book
-    |> List.mapi (fun n (x, xs) -> ([ n + 1 ], x) :: chapterToc (n + 1) (x, xs))
-    |> List.concat
+let rec toc =
+    List.mapi (fun n (x, xs) -> ([ n + 1 ], x) :: chapterToc (n + 1) (x, xs))
+    >> List.concat

@@ -158,7 +158,7 @@ let rec uselessLeaves (N (a, b, ch): Trie<'a>) =
     match ch with
     | [] when b -> false
     | [] -> true
-    | ch -> List.exists uselessLeaves ch
+    | _ -> List.exists uselessLeaves ch
 
 // Point 5
 let rec degree (N (a, b, ch): Trie<'a>) =

@@ -23,14 +23,14 @@ let rec lookUp a =
 
 let getPhone (name: Name) (register: Register) : Phone =
     match lookUp name register with
-    | None -> failwith ("No phone  entry by the name " + name)
+    | None -> failwith $"No phone  entry by the name {name}"
     | Some (x, _) -> x
 
 // Point 3
 let delete (name: Name, register: Register) : Register =
     List.filter (fun (x, _) -> x <> name) register
 
-// Point 4s
+// Point 4
 let getCandidates (level: Level) (registers: Register) : (Name * Phone) list =
     registers
     |> List.filter (fun (_, (_, c)) -> c - level < 3)
@@ -48,18 +48,16 @@ let exp3 = BinOp(exp1, "+", exp2)
 let exp4 = BinOp(exp2, "*", exp3)
 
 // Point 2
-let rec toString (exp: exp) : string =
-    match exp with
+let rec toString =
+    function
     | C x -> string x
-    | BinOp (a, b, c) -> "(" + toString a + b + toString c + ")"
+    | BinOp (a, b, c) -> $"({toString a} {b} {toString c})"
 
 // Point 3
-let rec extract' (exp: exp) : string list =
-    match exp with
-    | C _ -> []
-    | BinOp (a, b, c) -> b :: extract' a @ extract' c
-
-let extract (exp: exp) : Set<string> = extract' exp |> Set.ofList
+let rec extract' =
+    function
+    | C _ -> Set []
+    | BinOp (a, b, c) -> Set.unionMany [ extract' a; Set.singleton b; extract' c ]
 
 // Point 4
 type expr =
@@ -69,8 +67,7 @@ type expr =
     | Def of string * expr * expr
 
 let rec isDef (expr: expr) : bool =
-    let rec aux (id: string) (expr: expr) : bool =
-        match expr with
+    let rec aux (id: string) = function
         | C _ -> true
         | BinOp (x, _, y) -> aux id x && aux id y
         | Id x -> x = id
