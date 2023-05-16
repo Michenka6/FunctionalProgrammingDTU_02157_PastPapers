@@ -132,11 +132,11 @@ let larry = P("Larry", M, 1920, [ may; joe; paul ])
 let getAge (P (_, _, x, _)) = x
 
 let rec isWF (P (name, sex, year, children): FamilyTree) =
-    match xs with
+    match children with
     | [] -> true
     | _ ->
-        year < (children |> List.map getAge |> List.min)
-        && children = List.sortBy getAge children
+        year > (children |> List.maxBy getAge |> getAge)
+        && children = List.sortByDescending getAge children
 
 // Point 2
 let makePerson (name, sex, year) = P(name, sex, year, [])
@@ -158,7 +158,7 @@ let rec find n (P (name, sex, year, children): FamilyTree) =
     match children with
     | _ when name = n -> Some(sex, year, List.map getName children)
     | [] -> None
-    | _ -> (None, children) ||> List.fold (fun acc c -> Option.orElse acc (find n c))
+    | _ -> children |> List.map (find n) |> List.fold Option.orElse None
 
 // Point 5
 let rec toString' n m (P (name, sex, year, children): FamilyTree) =

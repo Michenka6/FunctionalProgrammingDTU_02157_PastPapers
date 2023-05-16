@@ -1,5 +1,3 @@
-
-
 // Problem 1 (20%)
 // Point 1
 let rec repeat s n =
@@ -70,17 +68,15 @@ let rec reflect (t: Tree<'a>) =
     | Br (t1, a, t2) -> Br(reflect t2, a, reflect t1)
 
 // Point 2
-let rec getSum t =
-    match t with
-    | Lf -> 0
-    | Br (t1, a, t2) -> a + getSum t1 + getSum t2
+let rec increment acc =
+    function
+    | Lf -> Lf, acc
+    | Br (tl, a, tr) ->
+        let (t1, acc1) = increment (acc + a) tl
+        let (t2, acc2) = increment acc1 tr
+        Br(t1, acc + a, tr), acc2
 
-let rec increment n t =
-    match t with
-    | Lf -> Lf
-    | Br (t1, a, t2) -> Br(increment (n + a) t1, n + a, increment (getSum t1 + a + n) t2)
-
-let accumulate = increment 0
+let accumulate t = let (t', _) = increment 0 t in t'
 
 let rec k i t =
     match t with
