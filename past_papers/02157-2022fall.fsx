@@ -142,7 +142,7 @@ let rec partitionACC p (xs1, xs2) =
 let partitionFoldBack p xs =
     List.foldBack (fun x (xs1, xs2) -> if p x then x :: xs1, xs2 else xs1, x :: xs2) xs ([], [])
 
-// Problem 2
+// Problem 3
 type H<'d> = N of 'd * Children<'d>
 and Children<'d> = H<'d> list
 
